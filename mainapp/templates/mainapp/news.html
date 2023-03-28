@@ -29,6 +29,19 @@
     </div>
     {% endfor %}
 
+    {% for new in news %}
+    <div class="card my-2">
+      <div class="card-body">
+        <h5 class="card-title">{{ new.title }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">
+          {{ datetime_obj|date:"Y-m-d h-i-s" }}
+        </h6>
+        <p class="card-text">{{ new.preview }}</p>
+        <a href="#" class="card-link">Подробнее</a>
+      </div>
+    </div>
+    {% endfor %}
+    
   </div>
 
   <div class="col-lg-4">
@@ -64,7 +77,7 @@
   <nav aria-label="Page navigation example">
     <ul class="pagination">
       <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-      <li class="page-item"><a class="page-link" href="{% url 'mainapp:news_paginator' 1 %}?param1=foobar">1</a></li>
+      <li class="page-item"><a class="page-link" href="{% url 'mainapp:news_paginator' 1 %}">1</a></li>
       <li class="page-item"><a class="page-link" href="{% url 'mainapp:news_paginator' page=2 %}">2</a></li>
       {# <li class="page-item"><a class="page-link" href="{% url 'mainapp:news_paginator' three %}">3</a></li> #}
       <li class="page-item"><a class="page-link" href="#">Next</a></li>

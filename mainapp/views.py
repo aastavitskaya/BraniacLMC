@@ -1,5 +1,8 @@
+import json
+import os
 from datetime import datetime
 
+from django.conf import settings
 from django.views.generic import TemplateView
 
 
@@ -14,6 +17,9 @@ class NewsPageView(TemplateView):
         # Get all previous data
         context = super().get_context_data(**kwargs)
         # Create your own data
+        with open(os.path.join(settings.BASE_DIR, "news.json")) as f:
+            context["news"] = json.load(f)
+
         context["news_title"] = "Громкий новостной заголовок"
         context["news_preview"] = "Предварительное описание, которое заинтересует каждого"
         context["range"] = range(5)
