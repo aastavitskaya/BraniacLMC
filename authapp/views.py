@@ -23,3 +23,9 @@ class CustomLoginView(LoginView):
                 mark_safe(f"Something goes worng:<br>{msg}"),
             )
         return self.render_to_response(self.get_context_data(form=form))
+
+
+class CustomLogoutView(LogoutView):
+    def dispatch(self, request, *args, **kwargs):
+        messages.add_message(self.request, messages.INFO, _("See you later!"))
+        return super().dispatch(request, *args, **kwargs)
