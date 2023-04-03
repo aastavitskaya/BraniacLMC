@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, LogoutView
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
