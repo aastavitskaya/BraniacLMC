@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     "social_django",
     "mainapp",
     "authapp",
+    "crispy_forms",
+    "crispy_bootstrap4",
 ]
 
 MIDDLEWARE = [
@@ -114,7 +116,8 @@ AUTH_USER_MODEL = "authapp.CustomUser"
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.github.GithubOAuth2",
     "social_core.backends.vk.VKOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
+    "authapp.auth.EmailAuthBackend",
+    # "django.contrib.auth.backends.ModelBackend",
 )
 
 LOGIN_REDIRECT_URL = "mainapp:main_page"
@@ -159,3 +162,5 @@ SOCIAL_AUTH_GITHUB_SECRET = "4f5696125ccc65511bd98dd388b3af08be8897fb"
 
 SOCIAL_AUTH_VK_OAUTH2_KEY = "51603605"
 SOCIAL_AUTH_VK_OAUTH2_SECRET = "n3VpZnXhdMfnjirxmRyQ"
+
+CRISPY_TEMPLATE_PACK = "bootstrap4"
