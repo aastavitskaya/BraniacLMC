@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -7,6 +9,9 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 
 from mainapp import forms as mainapp_forms
 from mainapp import models as mainapp_models
+
+
+logger = logging.getLogger(__name__)
 
 
 class MainPageView(TemplateView):
@@ -58,6 +63,7 @@ class CoursesDetailView(TemplateView):
     template_name = "mainapp/courses_detail.html"
 
     def get_context_data(self, pk=None, **kwargs):
+        logger.debug("Yet another log message")
         context = super(CoursesDetailView, self).get_context_data(**kwargs)
         context["course_object"] = get_object_or_404(mainapp_models.Courses, pk=pk)
         context["lessons"] = mainapp_models.Lesson.objects.filter(course=context["course_object"])
