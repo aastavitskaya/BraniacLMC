@@ -25,7 +25,10 @@ SECRET_KEY = "django-insecure--d%*riu)3xp2$@7#i%oz0p5)q984_ybcjsz()0vopy(s)f4e@#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["0.0.0.0"]
+ALLOWED_HOSTS = [
+    "0.0.0.0",
+    "127.0.0.1",
+]
 
 
 # Application definition
@@ -162,6 +165,8 @@ SOCIAL_AUTH_GITHUB_SECRET = "4f5696125ccc65511bd98dd388b3af08be8897fb"
 
 SOCIAL_AUTH_VK_OAUTH2_KEY = "51603605"
 SOCIAL_AUTH_VK_OAUTH2_SECRET = "n3VpZnXhdMfnjirxmRyQ"
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
