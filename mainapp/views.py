@@ -1,15 +1,16 @@
 import logging
 
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.http import JsonResponse
+from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
+from django.core.cache import cache
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView, View
 
 from mainapp import forms as mainapp_forms
 from mainapp import models as mainapp_models
-
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +76,18 @@ class CoursesDetailView(TemplateView):
                 context["feedback_form"] = mainapp_forms.CourseFeedbackForm(
                     course=context["course_object"], user=self.request.user
                 )
-        context["feedback_list"] = mainapp_models.CourseFeedback.objects.filter(
-            course=context["course_object"]
-        ).order_by("-created", "-rating")[:5]
+
+        cached_feedback = cache.get(f"feedback_list_{pk}")
+        if not cached_feedback:
+            context["feedback_list"] = (
+                mainapp_models.CourseFeedback.objects.filter(course=context["course_object"])
+                .order_by("-created", "-rating")[:5]
+                .select_related()
+            )
+            cache.set(f"feedback_list_{pk}", context["feedback_list"], timeout=300)  # 5 minutes
+        else:
+            context["feedback_list"] = cached_feedback
+
         return context
 
 
@@ -97,3 +107,26 @@ class ContactsPageView(TemplateView):
 
 class DocSitePageView(TemplateView):
     template_name = "mainapp/doc_site.html"
+
+
+class LogView(TemplateView):
+    template_name = "mainapp/log_view.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(LogView, self).get_context_data(**kwargs)
+        log_slice = []
+        with open(settings.LOG_FILE, "r") as log_file:
+            for i, line in enumerate(log_file):
+                if i == 1000:  # first 1000 lines
+                    break
+                log_slice.insert(0, line)  # append at start
+            context["log"] = "".join(log_slice)
+        return context
+
+
+class LogDownloadView(UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get(self, *args, **kwargs):
+        return FileResponse(open(settings.LOG_FILE, "rb"))
