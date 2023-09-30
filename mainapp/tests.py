@@ -1,25 +1,20 @@
-import os
-from http import HTTPStatus
-
-from django.test import Client, TestCase
-from django.urls import reverse
-
 import pickle
+from http import HTTPStatus
+from subprocess import getoutput
 from unittest import mock
 
-from authapp import models as authapp_models
-from mainapp import models as mainapp_models
-from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.core import mail as django_mail
+from django.test import Client, TestCase
+from django.urls import reverse
+from selenium.webdriver import Firefox, FirefoxOptions
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-
-from selenium import webdriver
-
-from selenium.webdriver.firefox.service import Service
+from authapp import models as authapp_models
+from mainapp import models as mainapp_models
+from mainapp import tasks as mainapp_tasks
 
 
 class TestNewsPage(TestCase):
@@ -32,7 +27,7 @@ class TestNewsPage(TestCase):
         super().setUp()
         self.client_with_auth = Client()
         self.user_admin = authapp_models.CustomUser.objects.get(username="admin")
-        self.client_with_auth.force_login(self.user_admin, backend="django.contrib.auth.backends.ModelBackend")
+        self.client_with_auth.force_login(self.user_admin, backend="authapp.auth.EmailAuthBackend")  # тот самый бекенд
 
     def test_page_open_list(self):
         path = reverse("mainapp:news")
@@ -131,11 +126,6 @@ class TestCoursesWithMock(TestCase):
             self.assertTrue(mocked_cache.called)
 
 
-from django.core import mail as django_mail
-
-from mainapp import tasks as mainapp_tasks
-
-
 class TestTaskMailSend(TestCase):
     fixtures = ("authapp/fixtures/001_user_admin.json",)
 
@@ -153,27 +143,29 @@ class TestNewsSelenium(StaticLiveServerTestCase):
     )
 
     def setUp(self):
-        from selenium.webdriver.firefox.service import Service
+        options = FirefoxOptions()  #  создаем настройки для запуска Firefox
 
-        install_dir = "home/snap/firefox/"
-        driver_loc = os.path.join(install_dir, "geckodriver")
-        binary_loc = os.path.join(install_dir, "firefox")
+        location = getoutput("find /snap/firefox -name firefox").split("\n")[
+            -1
+        ]  # пусть бинарник находится сам, getoutput выполняет передаваемую команду в терминале, а ее вывод возвращает в виде строки, [-1] - мы берем самую последнюю версию =)
+        options.binary_location = (
+            location  # можешь сама потыкать команду find в терминале, как будет минутка, может даже после Казани =)
+        )
 
-        service = Service(driver_loc)
-        opts = webdriver.FirefoxOptions()
-        opts.binary_location = binary_loc
-        driver = webdriver.Firefox(service=service, options=opts)
+        self.selenium = Firefox(
+            options=options
+        )  # дальше стартуем браузер, передавая параметры, geckodriver не используется
 
-        super().setUp()
-        self.selenium = WebDriver(executable_path=settings.SELENIUM_DRIVER_PATH_FF)
         self.selenium.implicitly_wait(10)
         # Login
         self.selenium.get(f"{self.live_server_url}{reverse('authapp:login')}")
         button_enter = WebDriverWait(self.selenium, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '[type="submit"]'))
         )
-        self.selenium.find_element_by_id("id_username").send_keys("admin")
-        self.selenium.find_element_by_id("id_password").send_keys("admin")
+        self.selenium.find_element(By.ID, "id_username").send_keys(
+            "admin@local.ru"
+        )  # новые методы find_element из Selenium 4
+        self.selenium.find_element(By.ID, "id_password").send_keys("admin")
         button_enter.click()
         # Wait for footer
         WebDriverWait(self.selenium, 5).until(EC.visibility_of_element_located((By.CLASS_NAME, "mt-auto")))
@@ -189,10 +181,6 @@ class TestNewsSelenium(StaticLiveServerTestCase):
         button_create.click()  # Test that button clickable
         WebDriverWait(self.selenium, 5).until(EC.visibility_of_element_located((By.ID, "id_title")))
         print("Button clickable!")
-        # With no element - test will be failed
-        # WebDriverWait(self.selenium, 5).until(
-        #     EC.visibility_of_element_located((By.ID, "id_title111"))
-        # )
 
     def test_pick_color(self):
         path = f"{self.live_server_url}{reverse('mainapp:main_page')}"
@@ -202,9 +190,12 @@ class TestNewsSelenium(StaticLiveServerTestCase):
             self.assertEqual(
                 navbar_el.value_of_css_property("background-color"),
                 "rgb(255, 255, 155)",
+                # "rgb(255, 255, 255)",  так тест будет проходить, скриншота не будет =Р
             )
         except AssertionError:
-            with open("var/screenshots/001_navbar_el_scrnsht.png", "wb") as outf:
+            with open(
+                "var/screenshots/001_navbar_el_scrnsht.png", "wb"
+            ) as outf:  # вот тут я вручную создавал папку var/screenshots/
                 outf.write(navbar_el.screenshot_as_png)
             raise
 
