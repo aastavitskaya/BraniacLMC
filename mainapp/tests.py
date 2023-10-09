@@ -143,28 +143,19 @@ class TestNewsSelenium(StaticLiveServerTestCase):
     )
 
     def setUp(self):
-        options = FirefoxOptions()  #  создаем настройки для запуска Firefox
+        options = FirefoxOptions()
 
-        location = getoutput("find /snap/firefox -name firefox").split("\n")[
-            -1
-        ]  # пусть бинарник находится сам, getoutput выполняет передаваемую команду в терминале, а ее вывод возвращает в виде строки, [-1] - мы берем самую последнюю версию =)
-        options.binary_location = (
-            location  # можешь сама потыкать команду find в терминале, как будет минутка, может даже после Казани =)
-        )
+        location = getoutput("find /snap/firefox -name firefox").split("\n")[-1]
+        options.binary_location = location
 
-        self.selenium = Firefox(
-            options=options
-        )  # дальше стартуем браузер, передавая параметры, geckodriver не используется
+        self.selenium = Firefox(options=options)
 
         self.selenium.implicitly_wait(10)
-        # Login
         self.selenium.get(f"{self.live_server_url}{reverse('authapp:login')}")
         button_enter = WebDriverWait(self.selenium, 5).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, '[type="submit"]'))
         )
-        self.selenium.find_element(By.ID, "id_username").send_keys(
-            "admin@local.ru"
-        )  # новые методы find_element из Selenium 4
+        self.selenium.find_element(By.ID, "id_username").send_keys("admin@local.ru")
         self.selenium.find_element(By.ID, "id_password").send_keys("admin")
         button_enter.click()
         # Wait for footer
@@ -190,12 +181,9 @@ class TestNewsSelenium(StaticLiveServerTestCase):
             self.assertEqual(
                 navbar_el.value_of_css_property("background-color"),
                 "rgb(255, 255, 155)",
-                # "rgb(255, 255, 255)",  так тест будет проходить, скриншота не будет =Р
             )
         except AssertionError:
-            with open(
-                "var/screenshots/001_navbar_el_scrnsht.png", "wb"
-            ) as outf:  # вот тут я вручную создавал папку var/screenshots/
+            with open("var/screenshots/001_navbar_el_scrnsht.png", "wb") as outf:
                 outf.write(navbar_el.screenshot_as_png)
             raise
 
